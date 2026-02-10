@@ -86,12 +86,18 @@ ${env.FILE_BUNDLE_BASE64}
 
     stage('Commit & Push') {
       steps {
-        sh """
+        sh '''
           git status
+    
+          if git diff --cached --quiet && git diff --quiet; then
+            echo "No changes detected. Skipping commit and push."
+            exit 0
+          fi
+    
           git add .
-          git commit -m "${params.COMMIT_MESSAGE}"
-          git push origin ${params.BRANCH}
-        """
+          git commit -m "${COMMIT_MESSAGE}"
+          git push origin ${BRANCH}
+        '''
       }
     }
 

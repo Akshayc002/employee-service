@@ -2,9 +2,11 @@ pipeline {
   agent any
 
   options {
+    skipDefaultCheckout()
     timestamps()
     disableConcurrentBuilds()
   }
+
 
   parameters {
     string(name: 'BRANCH', defaultValue: 'main', description: 'Git branch to create or update')

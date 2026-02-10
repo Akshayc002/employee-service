@@ -94,21 +94,27 @@ pipeline {
 
   stage('Commit & Push') {
     steps {
-        sh '''
-        git status
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'github-pat',
+                usernameVariable: 'GIT_USERNAME',
+                passwordVariable: 'GIT_PASSWORD'
+            )
+        ]) {
+            sh '''
+            git status
+            git add .
 
-        # Stage everything first (this includes untracked files)
-        git add .
+            if git diff --cached --quiet; then
+              echo "No changes detected after staging. Skipping commit and push."
+              exit 0
+            fi
 
-        # Now check if anything is staged
-        if git diff --cached --quiet; then
-          echo "No changes detected after staging. Skipping commit and push."
-          exit 0
-        fi
+            git commit -m "test: apply file bundle via Jenkins"
 
-        git commit -m "test: apply file bundle via Jenkins"
-        git push origin HEAD
-        '''
+            git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Akshayc002/employee-service.git HEAD
+            '''
+        }
     }
 }
 

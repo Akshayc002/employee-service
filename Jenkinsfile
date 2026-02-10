@@ -49,28 +49,38 @@ pipeline {
   }
 
     stage('Apply File Bundle') {
-      steps {
-        script {
-          def jsonFile = 'file_bundle.json'
-          writeFile file: jsonFile, text: new String(params.FILE_BUNDLE_BASE64.decodeBase64(), 'UTF-8')
+  steps {
+    powershell '''
+      $base64 = @"
+${env.FILE_BUNDLE_BASE64}
+"@
 
-          def bundle = readJSON file: jsonFile
+      $bytes = [System.Convert]::FromBase64String($base64)
+      $json = [System.Text.Encoding]::UTF8.GetString($bytes)
 
-          bundle.files.each { f ->
-            if (f.action == 'delete') {
-              sh "rm -f '${f.path}'"
-            } else {
-              sh """
-                mkdir -p "\$(dirname '${f.path}')"
-                cat > '${f.path}' << 'EOF'
-${f.content}
-EOF
-              """
-            }
+      $bundle = $json | ConvertFrom-Json
+
+      foreach ($file in $bundle.files) {
+        $path = $file.path
+        $action = $file.action
+        $content = $file.content
+
+        $dir = Split-Path $path
+        if ($dir -and !(Test-Path $dir)) {
+          New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        }
+
+        if ($action -eq "delete") {
+          if (Test-Path $path) {
+            Remove-Item $path -Force
           }
+        } else {
+          Set-Content -Path $path -Value $content -Encoding UTF8
         }
       }
-    }
+    '''
+  }
+}
 
     stage('Commit & Push') {
       steps {

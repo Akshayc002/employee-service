@@ -92,22 +92,25 @@ pipeline {
       }
   }
 
-    stage('Commit & Push') {
-      steps {
+  stage('Commit & Push') {
+    steps {
         sh '''
-          git status
-    
-          if git diff --cached --quiet && git diff --quiet; then
-            echo "No changes detected. Skipping commit and push."
-            exit 0
-          fi
-    
-          git add .
-          git commit -m "${COMMIT_MESSAGE}"
-          git push origin ${BRANCH}
+        git status
+
+        # Stage everything first (this includes untracked files)
+        git add .
+
+        # Now check if anything is staged
+        if git diff --cached --quiet; then
+          echo "No changes detected after staging. Skipping commit and push."
+          exit 0
+        fi
+
+        git commit -m "test: apply file bundle via Jenkins"
+        git push origin HEAD
         '''
-      }
     }
+}
 
     stage('Build & Test') {
       steps {

@@ -32,18 +32,21 @@ pipeline {
       }
     }
 
-    stage('Checkout') {
-      steps {
-        checkout([
-          $class: 'GitSCM',
-          branches: [[name: "*/${params.BRANCH}"]],
-          userRemoteConfigs: [[
-            url: env.REPO_URL,
-            credentialsId: env.GIT_CREDENTIALS_ID
-          ]]
-        ])
-      }
+  stage('Checkout') {
+    steps {
+      checkout([
+        $class: 'GitSCM',
+        branches: [[name: '*/main']],
+        userRemoteConfigs: [[
+          url: env.REPO_URL,
+          credentialsId: env.GIT_CREDENTIALS_ID
+        ]]
+      ])
+      sh """
+        git checkout -B ${params.BRANCH}
+      """
     }
+  }
 
     stage('Apply File Bundle') {
       steps {
